@@ -30,10 +30,10 @@ public class PaymentsController : ControllerBase
 
         if (payment == null)
         {
-            return new NotFoundResult();
+            return NotFound();
         }
 
-        return new OkObjectResult(payment);
+        return Ok(payment);
     }
 
     [HttpPost]
