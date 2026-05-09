@@ -50,18 +50,35 @@ public class PaymentsController : ControllerBase
             return BadRequest(new { status = "rejected", errors = validationResult.Errors });
         }
 
-        //TODO handle failures
-        var bankResult = await _bankClient.ProcessPaymentAsync(request); 
-
+        BankPaymentResponse bankResult;
+        try
+        {
+            bankResult = await _bankClient.ProcessPaymentAsync(request);
+        }
+        catch (HttpRequestException ex) 
+        {
+            switch(ex.StatusCode)
+            {
+                case System.Net.HttpStatusCode.BadRequest:
+                    return BadRequest(new { status = "rejected", errors = new[] { "Invalid payment details" } });
+                case System.Net.HttpStatusCode.ServiceUnavailable:
+                    return StatusCode(503, new { status = "error", errors = new[] { "Bank service is currently unavailable" } });
+                default:
+                    return StatusCode(500, new { status = "error", errors = new[] { "An unexpected error occurred while processing the payment" } });
+            }
+        }
+        
+        //storing all non error requests, information on a decline might be useful
         var response = new PostPaymentResponse
         {
             Id = Guid.NewGuid(),
-            Status = PaymentStatus.Authorized, //TODO placeholder, should be based on response received
+            Status = bankResult.Authorized ? PaymentStatus.Authorized : PaymentStatus.Declined, 
             CardNumberLastFour = request.CardNumber[^4..],
             ExpiryMonth = request.ExpiryMonth,
             ExpiryYear = request.ExpiryYear,
             Currency = request.Currency.ToUpperInvariant(),
-            Amount = request.Amount
+            Amount = request.Amount,
+            AuthorizationCode = bankResult.Authorized ? bankResult.AuthorizationCode : null
         };
 
         _paymentsRepository.Add(response);

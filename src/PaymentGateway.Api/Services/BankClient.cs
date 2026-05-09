@@ -31,6 +31,7 @@ namespace PaymentGateway.Api.Services
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             var httpResponse = await _httpClient.PostAsync("/payments", content);
+            httpResponse.EnsureSuccessStatusCode();
             var responseBody = await httpResponse.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<BankPaymentResponse>(responseBody)!;
         }
