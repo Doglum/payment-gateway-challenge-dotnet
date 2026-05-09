@@ -8,6 +8,12 @@ public class PaymentsRepository : IPaymentsRepository
     
     public void Add(PostPaymentResponse payment)
     {
+        // prevent storing of responses with duplicate ids
+        if (Get(payment.Id) != null)
+        {
+            throw new InvalidOperationException($"Payment with Id {payment.Id} already exists.");
+        }
+
         Payments.Add(payment);
     }
 

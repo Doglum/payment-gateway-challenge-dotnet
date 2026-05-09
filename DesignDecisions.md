@@ -6,7 +6,7 @@ This is a small markdown writeup to explain some of the design decisions I've ma
 - Chose a non generic solution as currently only one request type is being validated, for a more complex project I would add a generic interface and implement it for each request type.
 - Ignoring Luhn check digit algorithm for card number validation, but might be worth considering in a real scenario.
 - Using my own validation logic instead of a library like FluentValidation to avoid adding dependencies, but would use something like that in a real scenario for readable logic and nice error messages
-- There should probably be something checking that duplicate requests are rejected, not implemented here as there isn't an incoming identifier for payment requests
+- Rejecting any storage request for PostPaymentResponse that have an id that's already in the repository to guard against duplicate requests
 
 ## Modelling
 - Changed the type of CardNumberLastFour and CVV from an int to a string as no mathematical operations are performed on it. May also lead to issues with numbers like 0024 dropping prefix zeros.
