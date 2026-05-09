@@ -14,12 +14,15 @@ public class PaymentsController : ControllerBase
 {
     private readonly PaymentsRepository _paymentsRepository;
     private readonly IPostPaymentRequestValidator _postPaymentRequestValidator;
+    private readonly IBankClient _bankClient;
 
-    public PaymentsController(PaymentsRepository paymentsRepository, 
-                              IPostPaymentRequestValidator postPaymentRequestValidator)
+    public PaymentsController(PaymentsRepository paymentsRepository,
+                              IPostPaymentRequestValidator postPaymentRequestValidator,
+                              IBankClient bankClient)
     {
         _paymentsRepository = paymentsRepository;
         _postPaymentRequestValidator = postPaymentRequestValidator;
+        _bankClient = bankClient;
     }
 
     [HttpGet("{id:guid}")]
@@ -46,6 +49,9 @@ public class PaymentsController : ControllerBase
         {
             return BadRequest(new { status = "rejected", errors = validationResult.Errors });
         }
+
+        //TODO handle failures
+        var bankResult = await _bankClient.ProcessPaymentAsync(request); 
 
         var response = new PostPaymentResponse
         {

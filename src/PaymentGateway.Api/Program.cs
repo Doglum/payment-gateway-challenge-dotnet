@@ -13,6 +13,11 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<PaymentsRepository>();
 builder.Services.AddSingleton<IPostPaymentRequestValidator, PostPaymentRequestValidator>();
 
+builder.Services.AddHttpClient<IBankClient, BankClient>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:8080");
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
