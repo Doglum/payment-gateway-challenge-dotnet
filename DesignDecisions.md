@@ -8,10 +8,13 @@ This is a small markdown writeup to explain some of the design decisions I've ma
 - Ignoring Luhn check digit algorithm for card number validation, but might be worth considering in a real scenario.
 - Using my own validation logic instead of a library like FluentValidation to avoid adding dependencies, but would use something like that in a real scenario for readable logic and nice error messages
 
-### Modelling
+## Modelling
 - Changed the type of CardNumberLastFour and CVV from an int to a string as no mathematical operations are performed on it. May also lead to issues with numbers like 0024 dropping prefix zeros.
 - Marked strings as required as assuming that null values are unacceptable.
 - Using full card number and cvv in PostPaymentRequest, not storing them but am transmitting them so tokenization should be used in a real system.
+
+## Use of Interfaces
+- Not strictly necessary here but adding for more flexibility in test mocking and to keep business logic and concrete implemntations separate.
 
 ### Currency handling
 - Kept currency types as basic strings as the distinction doesn't matter too much for this task, but a currency object containing the following would be a good idea in a larger project: 

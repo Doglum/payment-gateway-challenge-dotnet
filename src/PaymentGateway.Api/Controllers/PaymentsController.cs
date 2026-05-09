@@ -12,11 +12,11 @@ namespace PaymentGateway.Api.Controllers;
 [ApiController]
 public class PaymentsController : ControllerBase
 {
-    private readonly PaymentsRepository _paymentsRepository;
+    private readonly IPaymentsRepository _paymentsRepository;
     private readonly IPostPaymentRequestValidator _postPaymentRequestValidator;
     private readonly IBankClient _bankClient;
 
-    public PaymentsController(PaymentsRepository paymentsRepository,
+    public PaymentsController(IPaymentsRepository paymentsRepository,
                               IPostPaymentRequestValidator postPaymentRequestValidator,
                               IBankClient bankClient)
     {

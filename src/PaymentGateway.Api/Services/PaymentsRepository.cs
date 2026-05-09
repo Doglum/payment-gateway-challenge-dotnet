@@ -2,7 +2,7 @@
 
 namespace PaymentGateway.Api.Services;
 
-public class PaymentsRepository
+public class PaymentsRepository : IPaymentsRepository
 {
     public List<PostPaymentResponse> Payments = new();
     
