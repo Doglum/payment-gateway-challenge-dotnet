@@ -32,9 +32,7 @@ public class PaymentsController : ControllerBase
         var payment = _paymentsRepository.Get(id);
 
         if (payment == null)
-        {
             return NotFound();
-        }
 
         return Ok(payment);
     }
