@@ -37,6 +37,7 @@ public class PaymentsController : ControllerBase
     }
 
     [HttpPost]
+    [ActionName(nameof(CreatePaymentAsync))]
     public async Task<ActionResult<PostPaymentResponse>> CreatePaymentAsync([FromBody] PostPaymentRequest request)
     {
         var validationResult = _postPaymentRequestValidator.Validate(request);
