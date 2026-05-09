@@ -64,7 +64,7 @@ namespace PaymentGateway.Api.Models.Validation
             // card number must be between 14-19 digits
             if (request.CardNumber.Length < 14 || request.CardNumber.Length > 19 || !AllCharsAreDigits(request.CardNumber))
             {
-                result.Errors.Add("CardNumberLastFour must be 4 digits");
+                result.Errors.Add("CardNumberLastFour must be between 14-19 digits");
             }
 
             return result;
