@@ -13,6 +13,8 @@ This is a small markdown writeup to explain some of the design decisions I've ma
 - Marked strings as required as assuming that null values are unacceptable.
 - Using full card number and cvv in PostPaymentRequest, not storing them but am transmitting them so tokenization should be used in a real system.
 - Removed rejection from PaymentStatus as rejected requests aren't stored, malformatted requests can't be used for payment
+- Assuming that authorization code is something useful and should be stored if it's returned, using PostPaymentResponse for this.
+- Using GetPaymentResponse to return stored data for PostPaymentResponses but stripping out the authorization code as that might be sensitive.
 
 ## Use of Interfaces
 - Not strictly necessary here but adding for more flexibility in test mocking and to keep business logic and concrete implemntations separate.
