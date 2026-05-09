@@ -7,6 +7,7 @@ This is a small markdown writeup to explain some of the design decisions I've ma
 - Ignoring Luhn check digit algorithm for card number validation, but might be worth considering in a real scenario.
 - Using my own validation logic instead of a library like FluentValidation to avoid adding dependencies, but would use something like that in a real scenario for readable logic and nice error messages
 - Rejecting any storage request for PostPaymentResponse that have an id that's already in the repository to guard against duplicate requests
+- Assuming bank expects expiry year in YYYY format, this should be clarified in a real system
 
 ## Modelling
 - Changed the type of CardNumberLastFour and CVV from an int to a string as no mathematical operations are performed on it. May also lead to issues with numbers like 0024 dropping prefix zeros.
