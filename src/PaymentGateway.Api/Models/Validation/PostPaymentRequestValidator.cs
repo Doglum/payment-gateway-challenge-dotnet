@@ -61,8 +61,8 @@ namespace PaymentGateway.Api.Models.Validation
                 result.Errors.Add("CVV must be 3 or 4 digits");
             }
 
-            // last four must be 4 digits
-            if (request.CardNumberLastFour.Length != 4 || !AllCharsAreDigits(request.CardNumberLastFour))
+            // card number must be between 14-19 digits
+            if (request.CardNumber.Length < 14 || request.CardNumber.Length > 19 || !AllCharsAreDigits(request.CardNumber))
             {
                 result.Errors.Add("CardNumberLastFour must be 4 digits");
             }

@@ -9,9 +9,8 @@ This is a small markdown writeup to explain some of the design decisions I've ma
 - Using my own validation logic instead of a library like FluentValidation to avoid adding dependencies, but would use something like that in a real scenario for readable logic and nice error messages
 
 ## Modelling
-### PostPaymentRequest & PostPaymentResponse
 - Changed the type of CardNumberLastFour and CVV from an int to a string as no mathematical operations are performed on it. May also lead to issues with numbers like 0024 dropping prefix zeros.
-- Marked strings as required as null values aren't valid.
+- Marked strings as required as assuming that null values are unacceptable.
 ### Currency handling
 - Kept currency types as basic strings as the distinction doesn't matter too much for this task, but a currency object containing the following would be a good idea in a larger project: 
     - ISO 4217 currency code, e.g. GBP 

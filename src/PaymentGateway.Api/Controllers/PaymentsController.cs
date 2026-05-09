@@ -51,7 +51,7 @@ public class PaymentsController : ControllerBase
         {
             Id = Guid.NewGuid(),
             Status = PaymentStatus.Authorized, //TODO placeholder, should be based on response received
-            CardNumberLastFour = request.CardNumberLastFour,
+            CardNumberLastFour = request.CardNumber[^4..],
             ExpiryMonth = request.ExpiryMonth,
             ExpiryYear = request.ExpiryYear,
             Currency = request.Currency.ToUpperInvariant(),
