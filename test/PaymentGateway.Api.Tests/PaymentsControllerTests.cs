@@ -1,9 +1,13 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
+
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestPlatform.TestHost;
+
 using Moq;
+
 using PaymentGateway.Api.Models;
 using PaymentGateway.Api.Models.Requests;
 using PaymentGateway.Api.Models.Responses;
@@ -14,7 +18,6 @@ namespace PaymentGateway.Api.Tests;
 
 public class PaymentsControllerTests
 {
-    // helper method to generate a standard valid request
     private PostPaymentRequest ValidRequest() => new()
     {
         CardNumber = "2222405343248877",
@@ -30,10 +33,8 @@ public class PaymentsControllerTests
         IPostPaymentRequestValidator? validator = null,
         IBankClient? bankClient = null)
     {
-        // use concrete by default, logic can be tested easily without many issues
         repo ??= new PaymentsRepository();
         validator ??= new PostPaymentRequestValidator();
-        // use mock by default, avoids slamming mountebank
         bankClient ??= Mock.Of<IBankClient>();
 
         return new WebApplicationFactory<Program>()
@@ -54,6 +55,7 @@ public class PaymentsControllerTests
     [Fact]
     public async Task GetPayment_ReturnsPayment_WhenItExists()
     {
+        // Arrange
         var payment = new PostPaymentResponse
         {
             Id = Guid.NewGuid(),
@@ -68,10 +70,12 @@ public class PaymentsControllerTests
         var repo = new PaymentsRepository();
         repo.Add(payment);
 
+        // Act
         var response = await BuildClient(repo: repo)
             .GetAsync($"/api/Payments/{payment.Id}");
         var body = await response.Content.ReadFromJsonAsync<GetPaymentResponse>();
 
+        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(body);
         Assert.Equal(payment.Id, body.Id);
@@ -84,15 +88,20 @@ public class PaymentsControllerTests
     [Fact]
     public async Task GetPayment_Returns404_WhenPaymentDoesNotExist()
     {
-        var response = await BuildClient()
-            .GetAsync($"/api/Payments/{Guid.NewGuid()}");
+        // Arrange
+        var client = BuildClient();
 
+        // Act
+        var response = await client.GetAsync($"/api/Payments/{Guid.NewGuid()}");
+
+        // Assert
         Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
     }
 
     [Fact]
     public async Task GetPayment_DoesNotReturnAuthorizationCode()
     {
+        // Arrange
         var payment = new PostPaymentResponse
         {
             Id = Guid.NewGuid(),
@@ -108,12 +117,15 @@ public class PaymentsControllerTests
         var repo = new PaymentsRepository();
         repo.Add(payment);
 
+        // Act
         var response = await BuildClient(repo: repo)
             .GetAsync($"/api/Payments/{payment.Id}");
-        var body = await response.Content.ReadFromJsonAsync<GetPaymentResponse>();
+        using var json = await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync());
 
+        // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Null(body!.GetType().GetProperty("AuthorizationCode")?.GetValue(body));
+        Assert.False(json.RootElement.TryGetProperty("authorizationCode", out _),
+            "Response should not contain authorizationCode");
     }
 
     // ---------------------------------------------------------------------------
@@ -121,87 +133,105 @@ public class PaymentsControllerTests
     // ---------------------------------------------------------------------------
 
     [Theory]
-    [InlineData(null)]                     // missing
-    [InlineData("")]                       // empty
-    [InlineData("123")]                    // too short (< 14 digits)
-    [InlineData("123456789012345678901")]  // too long (> 19 digits)
-    [InlineData("abcd1234abcd12")]         // non-numeric
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("123")]
+    [InlineData("123456789012345678901")]
+    [InlineData("abcd1234abcd12")]
     public async Task CreatePayment_Returns400_WhenCardNumberIsInvalid(string? cardNumber)
     {
+        // Arrange
         var request = ValidRequest();
         request.CardNumber = cardNumber!;
 
+        // Act
         var response = await BuildClient().PostAsJsonAsync("/api/Payments", request);
 
+        // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Theory]
-    [InlineData(0)]   // below range
-    [InlineData(13)]  // above range
+    [InlineData(0)]
+    [InlineData(13)]
     public async Task CreatePayment_Returns400_WhenExpiryMonthIsInvalid(int month)
     {
+        // Arrange
         var request = ValidRequest();
         request.ExpiryMonth = month;
 
+        // Act
         var response = await BuildClient().PostAsJsonAsync("/api/Payments", request);
 
+        // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
     public async Task CreatePayment_Returns400_WhenExpiryDateIsInThePast()
     {
+        // Arrange
         var request = ValidRequest();
         request.ExpiryYear = DateTime.UtcNow.Year - 1;
         request.ExpiryMonth = 1;
 
+        // Act
         var response = await BuildClient().PostAsJsonAsync("/api/Payments", request);
 
+        // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Fact]
     public async Task CreatePayment_Returns400_WhenExpiryMonthHasPassedThisYear()
     {
+        // Arrange
         var request = ValidRequest();
         request.ExpiryYear = DateTime.UtcNow.Year;
         request.ExpiryMonth = DateTime.UtcNow.Month - 1;
 
+        // Act
         var response = await BuildClient().PostAsJsonAsync("/api/Payments", request);
 
+        // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Theory]
-    [InlineData(null)]    // not set
-    [InlineData("")]      // blank
-    [InlineData("US")]    // too short
-    [InlineData("GBPX")]  // too long
-    [InlineData("XYZ")]   // not in allowed list
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("US")]
+    [InlineData("GBPX")]
+    [InlineData("XYZ")]
     public async Task CreatePayment_Returns400_WhenCurrencyIsInvalid(string currency)
     {
+        // Arrange
         var request = ValidRequest();
         request.Currency = currency;
 
+        // Act
         var response = await BuildClient().PostAsJsonAsync("/api/Payments", request);
 
+        // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     [Theory]
-    [InlineData(null)]     // not set
-    [InlineData("")]       // blank
-    [InlineData("12")]     // too short
-    [InlineData("12345")]  // too long
-    [InlineData("12a")]    // non-numeric
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("12")]
+    [InlineData("12345")]
+    [InlineData("12a")]
     public async Task CreatePayment_Returns400_WhenCvvIsInvalid(string cvv)
     {
+        // Arrange
         var request = ValidRequest();
         request.Cvv = cvv;
 
+        // Act
         var response = await BuildClient().PostAsJsonAsync("/api/Payments", request);
 
+        // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
@@ -212,6 +242,7 @@ public class PaymentsControllerTests
     [Fact]
     public async Task CreatePayment_Returns201WithAuthorizedStatus_WhenBankAuthorizes()
     {
+        // Arrange
         var bankClient = new Mock<IBankClient>();
         bankClient
             .Setup(b => b.ProcessPaymentAsync(It.IsAny<PostPaymentRequest>()))
@@ -221,39 +252,44 @@ public class PaymentsControllerTests
                 AuthorizationCode = Guid.NewGuid().ToString()
             });
 
+        // Act
         var response = await BuildClient(bankClient: bankClient.Object)
             .PostAsJsonAsync("/api/Payments", ValidRequest());
         var body = await response.Content.ReadFromJsonAsync<PostPaymentResponse>();
 
+        // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.NotNull(body);
         Assert.Equal(PaymentStatus.Authorized, body.Status);
         Assert.NotNull(body.AuthorizationCode);
-        Assert.Equal("8877", body.CardNumberLastFour);  // last 4 of ValidRequest card
+        Assert.Equal("8877", body.CardNumberLastFour);
     }
 
     [Fact]
     public async Task CreatePayment_Returns201WithDeclinedStatus_WhenBankDeclines()
     {
+        // Arrange
         var bankClient = new Mock<IBankClient>();
         bankClient
             .Setup(b => b.ProcessPaymentAsync(It.IsAny<PostPaymentRequest>()))
             .ReturnsAsync(new BankPaymentResponse { Authorized = false });
 
+        // Act
         var response = await BuildClient(bankClient: bankClient.Object)
             .PostAsJsonAsync("/api/Payments", ValidRequest());
         var body = await response.Content.ReadFromJsonAsync<PostPaymentResponse>();
 
+        // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.NotNull(body);
         Assert.Equal(PaymentStatus.Declined, body.Status);
-        Assert.Null(body.AuthorizationCode);  // not returned on decline
+        Assert.Null(body.AuthorizationCode);
     }
 
     [Fact]
     public async Task CreatePayment_StoresPayment_SoItCanBeRetrieved()
     {
-        // Proves the full round-trip: POST stores it, GET retrieves it
+        // Arrange
         var bankClient = new Mock<IBankClient>();
         bankClient
             .Setup(b => b.ProcessPaymentAsync(It.IsAny<PostPaymentRequest>()))
@@ -266,14 +302,14 @@ public class PaymentsControllerTests
         var repo = new PaymentsRepository();
         var client = BuildClient(repo: repo, bankClient: bankClient.Object);
 
+        // Act
         var postResponse = await client.PostAsJsonAsync("/api/Payments", ValidRequest());
         var created = await postResponse.Content.ReadFromJsonAsync<PostPaymentResponse>();
-
-        Assert.Equal(HttpStatusCode.Created, postResponse.StatusCode);
-
         var getResponse = await client.GetAsync($"/api/Payments/{created!.Id}");
         var retrieved = await getResponse.Content.ReadFromJsonAsync<GetPaymentResponse>();
 
+        // Assert
+        Assert.Equal(HttpStatusCode.Created, postResponse.StatusCode);
         Assert.Equal(HttpStatusCode.OK, getResponse.StatusCode);
         Assert.Equal(created.Id, retrieved!.Id);
         Assert.Equal(created.Amount, retrieved.Amount);
@@ -286,28 +322,34 @@ public class PaymentsControllerTests
     [Fact]
     public async Task CreatePayment_Returns503_WhenBankIsUnavailable()
     {
+        // Arrange
         var bankClient = new Mock<IBankClient>();
         bankClient
             .Setup(b => b.ProcessPaymentAsync(It.IsAny<PostPaymentRequest>()))
             .ThrowsAsync(new HttpRequestException("unavailable", null, HttpStatusCode.ServiceUnavailable));
 
+        // Act
         var response = await BuildClient(bankClient: bankClient.Object)
             .PostAsJsonAsync("/api/Payments", ValidRequest());
 
+        // Assert
         Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
     }
 
     [Fact]
     public async Task CreatePayment_Returns500_WhenBankThrowsUnexpectedException()
     {
+        // Arrange
         var bankClient = new Mock<IBankClient>();
         bankClient
             .Setup(b => b.ProcessPaymentAsync(It.IsAny<PostPaymentRequest>()))
             .ThrowsAsync(new HttpRequestException("unexpected", null, HttpStatusCode.InternalServerError));
 
+        // Act
         var response = await BuildClient(bankClient: bankClient.Object)
             .PostAsJsonAsync("/api/Payments", ValidRequest());
 
+        // Assert
         Assert.Equal(HttpStatusCode.InternalServerError, response.StatusCode);
     }
 }
