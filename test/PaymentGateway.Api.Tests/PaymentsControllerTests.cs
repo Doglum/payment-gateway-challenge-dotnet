@@ -24,7 +24,9 @@ public class PaymentsControllerTests
             ExpiryMonth = _random.Next(1, 12),
             Amount = _random.Next(1, 10000),
             CardNumberLastFour = _random.Next(1111, 9999).ToString(),
-            Currency = "GBP"
+            Currency = "GBP",
+            AuthorizationCode = Guid.NewGuid().ToString(),
+            Status = Models.PaymentStatus.Authorized
         };
 
         var paymentsRepository = new PaymentsRepository();
@@ -33,7 +35,7 @@ public class PaymentsControllerTests
         var webApplicationFactory = new WebApplicationFactory<PaymentsController>();
         var client = webApplicationFactory.WithWebHostBuilder(builder =>
             builder.ConfigureServices(services => ((ServiceCollection)services)
-                .AddSingleton(paymentsRepository)))
+                .AddSingleton<IPaymentsRepository>(paymentsRepository)))
             .CreateClient();
 
         // Act
