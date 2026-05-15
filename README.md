@@ -37,3 +37,6 @@ This is a small markdown writeup to explain some of the design decisions I've ma
 ## Testing
 - Using Moq and basic unit tests as the scope of this project isn't particularly large, so unit tests should be adequate.
 - For a full system would be using cypress or other framework for UI tests and testcontainers for longer integration tests.
+
+## Logging
+- Not using here, would use serilog plugged into application insights with azure alerts on errors or a similar setup with a real system.
