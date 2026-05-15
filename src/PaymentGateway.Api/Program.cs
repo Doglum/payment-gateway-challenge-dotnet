@@ -1,3 +1,4 @@
+using PaymentGateway.Api.Models.Validation;
 using PaymentGateway.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,7 +10,13 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddSingleton<PaymentsRepository>();
+builder.Services.AddSingleton<IPaymentsRepository, PaymentsRepository>();
+builder.Services.AddSingleton<IPostPaymentRequestValidator, PostPaymentRequestValidator>();
+
+builder.Services.AddHttpClient<IBankClient, BankClient>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:8080");
+});
 
 var app = builder.Build();
 
