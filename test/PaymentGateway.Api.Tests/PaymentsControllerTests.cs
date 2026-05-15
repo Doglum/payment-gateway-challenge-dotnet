@@ -154,6 +154,7 @@ public class PaymentsControllerTests
     [Theory]
     [InlineData(0)]
     [InlineData(13)]
+    [InlineData(-1)]
     public async Task CreatePayment_Returns400_WhenExpiryMonthIsInvalid(int month)
     {
         // Arrange

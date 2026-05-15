@@ -5,21 +5,21 @@ This is a small markdown writeup to explain some of the design decisions I've ma
 - Opted to keep this simple, operating under the assumption that any errors returned will be part of a bad request response.
 - Chose a non generic solution as currently only one request type is being validated, for a more complex project I would add a generic interface and implement it for each request type.
 - Ignoring Luhn check digit algorithm for card number validation, but might be worth considering in a real scenario.
-- Using my own validation logic instead of a library like FluentValidation to avoid adding dependencies, but would use something like that in a real scenario for readable logic and nice error messages
-- Rejecting any storage request for PostPaymentResponse that have an id that's already in the repository to guard against duplicate requests
-- Assuming bank expects expiry year in YYYY format and not YY format, this should be clarified in a real system
-- Assuming no restrictions on amount of money in any one request, should probably require an additional verification step for large amounts in a real system
+- Using my own validation logic instead of a library like FluentValidation to avoid adding dependencies, but would use something like that in a real scenario for readable logic and nice error messages.
+- Rejecting any storage request for PostPaymentResponse that have an id that's already in the repository to guard against duplicate requests.
+- Assuming bank expects expiry year in YYYY format and not YY format, this should be clarified in a real system.
+- Assuming no restrictions on amount of money in any one request, should probably require an additional verification step for large amounts in a real system.
 
 ## Modelling
 - Changed the type of CardNumberLastFour and CVV from an int to a string as no mathematical operations are performed on it. May also lead to issues with numbers like 0024 dropping prefix zeros.
 - Marked strings as required as assuming that null values are unacceptable.
 - Using full card number and cvv in PostPaymentRequest, not storing them but am transmitting them so tokenization should be used in a real system.
-- Removed rejection from PaymentStatus as rejected requests aren't stored, malformatted requests can't be used for payment
+- Removed rejection from PaymentStatus as rejected requests aren't stored, malformatted requests can't be used for payment.
 - Assuming that authorization code is something useful and should be stored if it's returned, using PostPaymentResponse for this.
 - Using GetPaymentResponse to return stored data for PostPaymentResponses but stripping out the authorization code as that might be sensitive.
 
 ## Storage
-- Roughly keeping to provided mimic repository for storage of PostPaymentRequest storage as proper storage via DB is out of scope
+- Roughly keeping to provided mimic repository for storage of PostPaymentRequest storage as proper storage via DB is out of scope.
 
 ## Use of Interfaces
 - Not strictly necessary here but adding for more flexibility in test mocking and to keep business logic and concrete implemntations separate.
@@ -34,4 +34,6 @@ This is a small markdown writeup to explain some of the design decisions I've ma
 ## Controllers
 - Switched inheritance from Controller to ControllerBase as we don't need views.
 
-
+## Testing
+- Using Moq and basic unit tests as the scope of this project isn't particularly large, so unit tests should be adequate.
+- For a full system would be using cypress or other framework for UI tests and testcontainers for longer integration tests.
